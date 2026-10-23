@@ -3,6 +3,7 @@ from io import BytesIO
 import openai
 from dotenv import load_dotenv
 from supabase import create_client
+import requests
 
 # Cargar variables de entorno
 load_dotenv()
@@ -17,7 +18,7 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def generar_y_guardar_arte_institucional(solicitud_id: str):
   print(
-      f"--> Procesando solicitud ID: {solicitud_id} con DALL-E 3 y normas UVG..."
+      f"--> Procesando solicitud ID: {solicitud_id} para afiche formal UVG..."
   )
 
   # 1. Obtener los datos reales del formulario desde la tabla 'solicitudes'
@@ -34,41 +35,35 @@ def generar_y_guardar_arte_institucional(solicitud_id: str):
 
   solicitud = response.data[0]
   titulo = solicitud.get("titulo", "Evento Universitario")
-  descripcion = solicitud.get(
-      "descripcion", "Ilustración abstracta institucional"
-  )
+  descripcion = solicitud.get("descripcion", "Evento académico institucional")
   tipo_arte = solicitud.get("tipo_arte", "Banner Web")
 
   print(f"Título obtenido: {titulo}")
   print(f"Tipo de arte: {tipo_arte}")
 
-  # 2. Construir el prompt optimizado para DALL-E 3 alineado al Brandbook de UVG
-  prompt_institucional = (
-      f"A professional, minimalist, high-end abstract graphic design for a university event "
-      f"titled '{titulo}'. Description context: {descripcion}. "
-      f"Style: Modern corporate branding, clean geometric composition, elegant visual flow, "
-      f"high-resolution vector aesthetic. Color palette featuring sophisticated academic tones "
-      f"and institutional green accents. "
-      f"CRITICAL CONSTRAINT: ABSOLUTELY NO TEXT, NO LETTERS, NO TYPOGRAPHY, NO WORDS, NO NUMBERS OF ANY KIND IN THE IMAGE."
+  # 2. Prompt enfocado en AFICHE / FLYER FORMAL (Estructura corporativa y limpia)
+  prompt_afiche = (
+      f"A professional formal event poster and promotional flyer background for a university event "
+      f"titled '{titulo}'. Context: {descripcion}. "
+      f"Design style: Clean corporate graphic design, elegant layout framing with professional empty spaces for text, "
+      f"modern academic branding, sophisticated color palette featuring official university green and neutral tones, "
+      f"high-end marketing banner aesthetic, crisp vector lines, highly polished visual composition."
   )
 
-  print("Generando imagen de alta calidad con DALL-E 3...")
+  print("Generando afiche formal con DALL-E 2...")
 
   try:
-    # Llamada oficial a la API de OpenAI para DALL-E 3
+    # Llamada a DALL-E 2 para afiches y banners formales
     ai_response = client.images.generate(
-        model="dall-e-3",
-        prompt=prompt_institucional,
-        size="1024x1024",
-        quality="standard",
+        model="dall-e-2",
+        prompt=prompt_afiche,
+        size="1024x1024",  # DALL-E 2 soporta 1024x1024 de manera estándar
         n=1,
     )
 
     image_url = ai_response.data[0].url
 
-    # Descargar los bytes de la imagen generada por OpenAI
-    import requests
-
+    # Descargar los bytes de la imagen generada
     img_response = requests.get(image_url)
     if img_response.status_code != 200:
       print("Error al descargar la imagen generada por OpenAI.")
@@ -86,14 +81,10 @@ def generar_y_guardar_arte_institucional(solicitud_id: str):
 
   print(f"Subiendo archivo a Supabase Storage: {file_path}")
 
-  # Subir imagen (reemplazando si ya existe)
   storage_response = supabase.storage.from_(bucket_name).upload(
       file_path,
       image_bytes,
       file_options={"content-type": "image/png", "upsert": "true"},
   )
 
-  print(
-      "¡Arte institucional de alta calidad generado y guardado exitosamente en"
-      " Supabase!"
-  )
+  print("¡Afiche institucional formal guardado exitosamente en Supabase!")
