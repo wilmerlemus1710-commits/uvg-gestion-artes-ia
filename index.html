@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gestión de Artes IA | UVG Campus Sur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-2xl max-w-md w-full text-center shadow-2xl">
+        <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-16 mx-auto mb-4 object-contain">
+        <h2 class="text-xl font-bold text-slate-900 mb-1">Gestión de Artes IA</h2>
+        <p class="text-xs text-slate-500 mb-6">Departamento de Comunicaciones y Mercadeo - Campus Sur</p>
+        
+        <form id="form-login" class="text-left flex flex-col gap-4">
+            <div>
+                <label class="text-xs font-semibold text-slate-700 block mb-1">Correo Institucional (@uvg.edu.gt)</label>
+                <input type="email" id="email-login" required placeholder="usuario@uvg.edu.gt" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+            </div>
+            <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg text-sm transition-colors cursor-pointer">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("form-login").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const email = document.getElementById("email-login").value.trim().toLowerCase();
+
+            if (!email.endsWith("@uvg.edu.gt")) {
+                alert("Debe utilizar un correo institucional válido (@uvg.edu.gt)");
+                return;
+            }
+
+            let rol = 'solicitante';
+            let nombre = email.split('@')[0];
+
+            if (email === 'wglemus@uvg.edu.gt' || email === 'llopez@uvg.edu.gt') {
+                rol = 'jefe';
+                nombre = email === 'wglemus@uvg.edu.gt' ? 'Wilmer Lemus' : 'Luis Alfredo Lopez';
+            } else if (email === 'kaperez@uvg.edu.gt') {
+                rol = 'disenador';
+                nombre = 'Kevin Perez';
+            }
+
+            const usuario = { email: email, rol: rol, nombre: nombre };
+            localStorage.setItem("usuarioActual", JSON.stringify(usuario));
+
+            if (rol === 'jefe') {
+                window.location.href = "admin.html";
+            } else if (rol === 'disenador') {
+                window.location.href = "disenador.html";
+            } else {
+                window.location.href = "solicitud.html";
+            }
+        });
+    </script>
+</body>
+</html>

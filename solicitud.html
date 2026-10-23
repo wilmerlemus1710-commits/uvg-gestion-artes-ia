@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Solicitud - Gestión de Artes IA | UVG Campus Sur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans text-slate-800">
+
+    <header class="bg-slate-900 text-white border-b-4 border-emerald-700 px-6 py-3 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-10 object-contain bg-white p-1 rounded">
+            <div>
+                <h1 class="font-bold text-sm">Portal de Solicitudes</h1>
+                <p class="text-xs text-slate-400" id="info-usuario">Cargando...</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="mis-solicitudes.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors border border-slate-700">
+    📋 Mis Solicitudes
+</a>
+            <button id="btn-regresar" onclick="regresarVistaAnterior()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer border border-slate-700">
+                ← Regresar
+            </button>
+            <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer">
+                Salir
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto my-8 px-4 flex-grow">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
+            <div class="md:col-span-5 bg-gradient-to-br from-slate-900 to-emerald-950 text-white p-8 flex flex-col justify-between">
+                <div>
+                    <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-12 bg-white p-1.5 rounded-lg mb-6 object-contain">
+                    <h2 class="text-xl font-bold mb-2">Solicitud de Arte IA</h2>
+                    <p class="text-xs text-emerald-300 mb-6">Comunicaciones y Mercadeo - Campus Sur</p>
+                    <p class="text-xs text-slate-300 leading-relaxed border-t border-emerald-900/50 pt-4">
+                        Ingrese los detalles de su actividad. El motor institucional evaluará automáticamente la prioridad de su diseño basándose en los datos proporcionados.
+                    </p>
+                </div>
+                <div class="text-[11px] text-emerald-400 font-medium pt-6">Universidad del Valle de Guatemala</div>
+            </div>
+
+            <div class="md:col-span-7 p-8">
+                <h3 class="text-lg font-bold text-slate-900 mb-1">Crear Requerimiento</h3>
+                <p class="text-xs text-slate-500 mb-6">Complete la información requerida para su evento.</p>
+
+                <form id="form-solicitud" class="flex flex-col gap-4">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 block mb-1">Correo del Solicitante</label>
+                        <input type="email" id="correo_solicitante" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-slate-600 cursor-not-allowed">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 block mb-1">Título / Tema</label>
+                        <input type="text" id="titulo" required placeholder="Ej: Afiche Conferencia Ingeniería" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700 block mb-1">Tipo de Arte</label>
+                            <select id="tipo_arte" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                                <option value="Afiche Digital">Afiche Digital</option>
+                                <option value="Post Redes Sociales">Post Redes Sociales</option>
+                                <option value="Banner Web">Banner Web</option>
+                                <option value="Señalética">Señalética</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-700 block mb-1">Fecha del Evento</label>
+                            <input type="date" id="fecha_evento" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-slate-700 block mb-1">Descripción y Requerimientos</label>
+                        <textarea id="descripcion" rows="3" required placeholder="Detalles visuales, textos principales, colores o temática..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-enviar" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg text-sm transition-colors cursor-pointer shadow-md mt-2">
+                        Enviar Solicitud
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const user = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
+            if (user.rol === 'jefe' || user.rol === 'admin' || user.rol === 'disenador') {
+                document.getElementById("btn-regresar").classList.remove("hidden");
+            }
+        });
+
+        function regresarVistaAnterior() {
+            const user = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
+            if (user.rol === 'jefe' || user.rol === 'admin') {
+                window.location.href = "admin.html";
+            } else if (user.rol === 'disenador') {
+                window.location.href = "disenador.html";
+            } else {
+                window.location.href = "index.html";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Diseñador - Gestión de Artes IA | UVG Campus Sur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans text-slate-800">
+
+    <!-- CABECERA SUPERIOR -->
+    <header class="bg-slate-900 text-white border-b-4 border-emerald-700 px-6 py-3 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-10 object-contain bg-white p-1 rounded">
+            <div>
+                <h1 class="font-bold text-sm">Portal del Diseñador Gráfico</h1>
+                <p class="text-xs text-slate-400" id="info-usuario">Cargando...</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Botón condicional para regresar al Dashboard (Solo visible para jefes/administradores) -->
+            <a href="admin.html" id="btn-volver-dashboard" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors border border-slate-700">
+                ← Regresar al Dashboard
+            </a>
+            <a href="solicitud.html" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">+ Nueva Solicitud</a>
+            <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer">Salir</button>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-6xl w-full mx-auto my-8 px-4 flex-grow flex flex-col gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="font-bold text-base text-slate-900">Cola de Solicitudes y Alertas de Diseño</h3>
+                    <p class="text-xs text-slate-500">Acepte las solicitudes para iniciar la creación del arte gráfico.</p>
+                </div>
+                <button onclick="cargarColaDisenador()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-semibold text-slate-700 transition-colors cursor-pointer">🔄 Actualizar Cola</button>
+            </div>
+            
+            <div id="galeria-artes" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <p class="text-slate-500 text-xs col-span-3 text-center py-8">Cargando cola de diseño...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        // Validar si el usuario actual es jefe o admin para mostrar el botón de retorno al dashboard
+        document.addEventListener("DOMContentLoaded", () => {
+            const usuario = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
+            if (usuario.rol === 'jefe' || usuario.rol === 'admin') {
+                const btnDashboard = document.getElementById("btn-volver-dashboard");
+                if (btnDashboard) {
+                    btnDashboard.classList.remove("hidden");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

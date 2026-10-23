@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrador - Gestión de Artes IA | UVG Campus Sur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Librerías para generación de PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex font-sans text-slate-800">
+
+    <!-- 1. BARRA DE MENÚ LATERAL IZQUIERDA (SIDEBAR RETRÁCTIL) -->
+    <aside id="sidebar" class="w-64 bg-[#1e3a8a] text-white flex flex-col justify-between p-6 shadow-2xl fixed inset-y-0 left-0 z-20 transition-all duration-300">
+        <div>
+            <!-- Cabecera de la Barra con Botón de Contraer / Expandir -->
+            <div class="flex items-center justify-between mb-8 bg-white/10 p-3 rounded-xl border border-white/10">
+                <div class="flex items-center gap-3 overflow-hidden sidebar-logo-container">
+                    <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-8 object-contain bg-white p-0.5 rounded flex-shrink-0">
+                    <div class="sidebar-text">
+                        <h1 class="font-bold text-xs tracking-wide whitespace-nowrap">Gestión Artes IA</h1>
+                        <p class="text-[10px] text-blue-200">UVG Campus Sur</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="text-blue-200 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" title="Contraer / Expandir menú">
+                    ◀
+                </button>
+                  </div>
+
+            <!-- Navegación del Sistema -->
+            <nav class="space-y-2 text-xs font-semibold">
+                <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/20 text-white shadow-inner transition-colors whitespace-nowrap overflow-hidden">
+                    📊 <span class="sidebar-text">Dashboard Principal</span>
+                </a>
+                <a href="solicitud.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-blue-200 hover:text-white transition-colors whitespace-nowrap overflow-hidden">
+                    📝 <span class="sidebar-text">Formulario de Solicitud</span>
+                </a>
+                <a href="disenador.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-blue-200 hover:text-white transition-colors whitespace-nowrap overflow-hidden">
+                    🎨 <span class="sidebar-text">Cola de Diseño</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Información de Usuario y Cierre de Sesión -->
+        <div class="pt-6 border-t border-white/10">
+            <div class="mb-3 sidebar-text overflow-hidden">
+                <p class="text-[10px] text-blue-300 uppercase tracking-wider font-bold">Sesión Activa</p>
+                <p class="text-xs text-white font-medium truncate mt-0.5" id="info-usuario">Cargando...</p>
+            </div>
+            <button onclick="cerrarSesion()" class="w-full bg-red-600 hover:bg-red-700 text-white text-xs py-2.5 rounded-xl font-medium transition-colors shadow cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden">
+                🚪 <span class="sidebar-text">Cerrar Sesión</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- 2. CONTENIDO PRINCIPAL (Se ajusta dinámicamente según el estado del Sidebar) -->
+    <main id="main-content" class="flex-1 ml-64 p-8 flex flex-col gap-6 overflow-y-auto transition-all duration-300">
+        
+        <!-- Cabecera de Bienvenida -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 gap-4">
+            <div>
+                <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full uppercase tracking-wider">Panel Gerencial</span>
+                <h2 class="text-xl font-extrabold text-slate-900 mt-2">Centro de Control de Solicitudes</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Supervisión en tiempo real del motor de prioridades y tiempos operativos.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="solicitud.html" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+                    + Nueva Solicitud
+                </a>
+                <button onclick="cargarDashboardJefe()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm flex items-center gap-2 cursor-pointer">
+                    🔄 Actualizar
+                </button>
+                <button onclick="exportarReportePDF()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3.5 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
+    📥 Descargar Reporte Gerencial (PDF)
+</button>
+          
+            </div>
+        </div>
+
+        <!-- Tarjetas KPI Superiores -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase">Total Solicitudes</p>
+                    <h3 class="text-3xl font-extrabold text-slate-900 mt-1" id="stat-total">0</h3>
+                </div>
+                <div class="p-3 bg-blue-50 rounded-xl text-blue-600 text-xl">📊</div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-amber-600 font-semibold uppercase">Pendientes</p>
+                    <h3 class="text-3xl font-extrabold text-amber-600 mt-1" id="stat-pendientes">0</h3>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl text-amber-600 text-xl">⏳</div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-emerald-600 font-semibold uppercase">Listos para Aprobar</p>
+                    <h3 class="text-3xl font-extrabold text-emerald-600 mt-1" id="stat-generados">0</h3>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600 text-xl">🎨</div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-red-600 font-semibold uppercase">Críticas</p>
+                    <h3 class="text-3xl font-extrabold text-red-600 mt-1" id="stat-criticas">0</h3>
+                </div>
+                <div class="p-3 bg-red-50 rounded-xl text-red-600 text-xl">🚨</div>
+            </div>
+        </div>
+
+        <!-- Panel de Distribución y Eficiencia -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Distribución por Tipo de Arte (Separado en 4 categorías) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900 mb-1">Distribución por Tipo de Arte</h3>
+                    <p class="text-xs text-slate-500 mb-4">Requerimientos ingresados al sistema.</p>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="flex justify-between items-center text-xs"><span class="text-slate-600 font-medium">Afiches Digitales</span><span class="font-bold text-slate-900" id="count-afiche">0</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="bar-afiche" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                    
+                    <div class="flex justify-between items-center text-xs"><span class="text-slate-600 font-medium">Redes Sociales</span><span class="font-bold text-slate-900" id="count-redes">0</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="bar-redes" class="bg-cyan-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+
+                    <div class="flex justify-between items-center text-xs"><span class="text-slate-600 font-medium">Banners Web</span><span class="font-bold text-slate-900" id="count-banner">0</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="bar-banner" class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                    
+                    <div class="flex justify-between items-center text-xs"><span class="text-slate-600 font-medium">Señalética</span><span class="font-bold text-slate-900" id="count-senaletica">0</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="bar-senaletica" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div></div>
+                </div>
+            </div>
+
+            <!-- Eficiencia Operativa -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900 mb-1">Eficiencia Operativa</h3>
+                    <p class="text-xs text-slate-500 mb-4">Métricas reales calculadas por Supabase.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p class="text-[11px] text-slate-500 font-semibold uppercase">Tiempo Promedio</p>
+                        <h4 class="text-xl font-extrabold text-blue-600 mt-1" id="val-tiempo-promedio">-- hrs</h4>
+                        <span class="text-[10px] text-emerald-600 font-semibold">⚡ Base Real</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <p class="text-[11px] text-slate-500 font-semibold uppercase">Tasa de Atención</p>
+                        <h4 class="text-xl font-extrabold text-emerald-600 mt-1" id="val-tasa-atencion">0%</h4>
+                        <span class="text-[10px] text-slate-500 font-semibold">🎯 Completados</span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                    <span>Diseñador asignado: <strong class="text-slate-800">Kevin Pérez</strong></span>
+                    <span class="text-emerald-600 font-semibold">● En Línea</span>
+                </div>
+            </div>
+
+            <!-- Estado del Sistema -->
+            <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                <div>
+                    <span class="bg-blue-600/40 text-blue-300 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Motor IA Activo</span>
+                    <h3 class="font-bold text-base mt-3 mb-1">Evaluación Automática</h3>
+                    <p class="text-xs text-slate-300">Los criterios de impacto y complejidad se calculan de manera inteligente al recibir cada requerimiento.</p>
+                </div>
+                <div class="pt-4">
+                    <div class="bg-white/10 p-3 rounded-xl border border-white/10 text-xs text-blue-200 flex items-center justify-between">
+                        <span>Estado de Base de Datos</span>
+                        <span class="text-emerald-400 font-bold">Conectado ✓</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tabla General de Solicitudes y Tiempos -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-200 font-bold text-sm text-slate-900 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <span>Listado General Priorizado y Tiempos</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full" id="badge-total-tabla">0 reg.</span>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase tracking-wider font-semibold">
+                        <tr>
+                            <th class="p-3.5">Solicitante</th>
+                            <th class="p-3.5">Título / Tema</th>
+                            <th class="p-3.5">Tipo de Arte</th>
+                            <th class="p-3.5">Evento</th>
+                            <th class="p-3.5">Prioridad</th>
+                            <th class="p-3.5">Tiempo Transcurrido</th>
+                            <th class="p-3.5">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-jefe-body">
+                        <tr><td colspan="7" class="p-8 text-center text-slate-400">Cargando registros desde Supabase...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ESTILOS Y SCRIPT PARA EL COMPORTAMIENTO RETRÁCTIL -->
+    <style>
+        .sidebar-collapsed {
+            width: 80px !important;
+        }
+        .sidebar-collapsed .sidebar-text {
+            display: none !important;
+        }
+        .sidebar-collapsed + main {
+            margin-left: 80px !important;
+        }
+    </style>
+
+    <script src="app.js"></script>
+    <script>
+        // Función para contraer y expandir el menú lateral
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-collapsed');
+            
+            const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // Restaurar estado guardado de la barra al cargar la página
+        document.addEventListener("DOMContentLoaded", () => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('sidebar').classList.add('sidebar-collapsed');
+            }
+            setTimeout(calcularEficienciaReal, 1200);
+        });
+
+        async function calcularEficienciaReal() {
+            try {
+                const { data: solicitudes, error } = await db
+                    .from("solicitudes")
+                    .select(`*, artes_generados (*)`);
+
+                if (error || !solicitudes || solicitudes.length === 0) return;
+
+                const total = solicitudes.length;
+                
+                const afiches = solicitudes.filter(s => s.tipo_arte === 'Afiche Digital').length;
+                const redes = solicitudes.filter(s => s.tipo_arte === 'Post Redes Sociales').length;
+                const banners = solicitudes.filter(s => s.tipo_arte === 'Banner Web').length;
+                const senaletica = solicitudes.filter(s => s.tipo_arte === 'Señalética').length;
+
+                document.getElementById("count-afiche").innerText = afiches;
+                document.getElementById("count-redes").innerText = redes;
+                document.getElementById("count-banner").innerText = banners;
+                document.getElementById("count-senaletica").innerText = senaletica;
+
+                document.getElementById("bar-afiche").style.width = `${(afiches / total) * 100}%`;
+                document.getElementById("bar-redes").style.width = `${(redes / total) * 100}%`;
+                document.getElementById("bar-banner").style.width = `${(banners / total) * 100}%`;
+                document.getElementById("bar-senaletica").style.width = `${(senaletica / total) * 100}%`;
+
+                const atendidas = solicitudes.filter(s => s.estado === 'en_revision' || (s.artes_generados && s.artes_generados.length > 0)).length;
+                const tasaAtencion = Math.round((atendidas / total) * 100);
+                document.getElementById("val-tasa-atencion").innerText = `${tasaAtencion}%`;
+
+                let sumaHoras = 0;
+                solicitudes.forEach(s => {
+                    const ingreso = new Date(s.created_at || Date.now());
+                    const ahora = new Date();
+                    const horas = (ahora - ingreso) / (1000 * 60 * 60);
+                    sumaHoras += horas;
+                });
+                const promedioHoras = (sumaHoras / total).toFixed(1);
+                document.getElementById("val-tiempo-promedio").innerText = `${promedioHoras} hrs`;
+
+            } catch (e) {
+                console.log("Calculando métricas...");
+            }
+        }
+    </script>
+</body>
+</html>

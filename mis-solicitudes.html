@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Solicitudes - Gestión de Artes IA | UVG Campus Sur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans text-slate-800">
+
+    <!-- CABECERA INSTITUCIONAL -->
+    <header class="bg-slate-900 text-white border-b-4 border-emerald-700 px-6 py-3 flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <img src="Recursos/Logo UVG Campus Sur - 01.png" alt="Logo UVG" class="h-10 object-contain bg-white p-1 rounded">
+            <div>
+                <h1 class="font-bold text-sm">Portal de Seguimiento del Solicitante</h1>
+                <p class="text-xs text-slate-400" id="info-usuario">Cargando...</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="solicitud.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors border border-slate-700">
+                ← Regresar al Formulario
+            </a>
+            <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer">Salir</button>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-5xl w-full mx-auto my-8 px-4 flex-grow flex flex-col gap-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="font-bold text-base text-slate-900">Mis Requerimientos Ingresados</h2>
+                    <p class="text-xs text-slate-500">Historial y estado en tiempo real de las solicitudes asociadas a su correo institucional.</p>
+                </div>
+                <button onclick="cargarMisSolicitudes()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg font-semibold text-slate-700 transition-colors cursor-pointer">🔄 Actualizar Estado</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase tracking-wider font-semibold">
+                        <tr>
+                            <th class="p-3.5">Título / Tema</th>
+                            <th class="p-3.5">Tipo de Arte</th>
+                            <th class="p-3.5">Fecha del Evento</th>
+                            <th class="p-3.5">Prioridad Asignada</th>
+                            <th class="p-3.5">Estado Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-mis-solicitudes">
+                        <tr><td colspan="5" class="p-8 text-center text-slate-400">Cargando sus solicitudes...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- IMPORTANTE: Usamos app.js para la conexión centralizada -->
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const usuario = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
+            const infoUser = document.getElementById("info-usuario");
+            if (infoUser) {
+                infoUser.innerText = `${usuario.nombre || usuario.email} (${(usuario.rol || 'solicitante').toUpperCase()})`;
+            }
+
+            if (!usuario.email) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            // Esperamos un momento a que app.js inicialice la variable global 'db'
+            setTimeout(() => {
+                cargarMisSolicitudes();
+            }, 600);
+        });
+
+        async function cargarMisSolicitudes() {
+            const usuario = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
+            const emailUsuario = usuario.email;
+            const tbody = document.getElementById("tabla-mis-solicitudes");
+
+            tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Consultando base de datos...</td></tr>`;
+
+            // Verificamos que la variable 'db' provenga de app.js
+            if (typeof db === 'undefined') {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Error: No se encontró la conexión global en app.js</td></tr>`;
+                return;
+            }
+
+            const { data: solicitudes, error } = await db
+                .from("solicitudes")
+                .select(`*, artes_generados (*)`)
+                .eq("solicitante_email", emailUsuario)
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Error al consultar Supabase: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (!solicitudes || solicitudes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">Aún no ha registrado ninguna solicitud con este correo.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            solicitudes.forEach(s => {
+                const tieneArte = s.artes_generados && s.artes_generados.length > 0;
+                let estadoBadge = '';
+
+                if (s.estado === 'pendiente') {
+                    estadoBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">⏳ Pendiente de revisión</span>`;
+                } else if (tieneArte) {
+                    estadoBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">✔ Arte Creado y Aprobado</span>`;
+                } else {
+                    estadoBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">🎨 En Revisión / Proceso</span>`;
+                }
+
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-slate-200 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3.5 font-semibold text-slate-900">${s.titulo}<br><span class="text-[10px] text-slate-400 font-normal">Desc: ${(s.descripcion || '').substring(0, 40)}...</span></td>
+                    <td class="p-3.5 text-slate-600 font-medium">${s.tipo_arte}</td>
+                    <td class="p-3.5 text-slate-600">${s.fecha_evento}</td>
+                    <td class="p-3.5 font-bold ${s.clasificacion_prioridad === 'Crítica' ? 'text-red-600' : 'text-emerald-700'}">${s.clasificacion_prioridad}</td>
+                    <td class="p-3.5">${estadoBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
