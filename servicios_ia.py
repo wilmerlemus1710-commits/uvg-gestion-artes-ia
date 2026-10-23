@@ -21,13 +21,14 @@ def generar_y_guardar_arte_institucional(solicitud_id: str):
         if not solicitud:
             raise ValueError(f"No se encontró la solicitud con ID: {solicitud_id}")
 
-        # 2. Construir el prompt estructurado
+        # 2. Construir el prompt estructurado con restricciones estrictas para evitar texto ilegible
         prompt_optimizado = (
             f"Diseño gráfico profesional para pieza institucional universitaria. "
             f"Tipo de arte: {solicitud['tipo_arte']}. "
-            f"Título/Tema: {solicitud['titulo']}. "
+            f"Tema visual: {solicitud['titulo']}. "
             f"Detalles: {solicitud['descripcion']}. "
-            f"Estilo: Limpio, académico, moderno, adaptado a identidad corporativa universitaria."
+            f"Estilo: Limpio, académico, moderno, adaptado a identidad corporativa universitaria. "
+            f"IMPORTANTE: NO TEXT, NO LETTERS, NO TYPOGRAPHY, abstract background, clean graphic design elements only."
         )
 
         # 3. Guardar el prompt
