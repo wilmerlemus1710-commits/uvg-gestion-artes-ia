@@ -152,7 +152,7 @@ async function cargarDashboardJefe() {
     document.getElementById("stat-total").innerText = solicitudes.length;
     document.getElementById("stat-pendientes").innerText = solicitudes.filter(s => s.estado === 'pendiente').length;
     document.getElementById("stat-generados").innerText = solicitudes.filter(s => s.estado === 'en_revision' || s.estado === 'generado').length;
-    document.getElementById("stat-criticas").innerText = solicitudes.filter(s => s.clasificacion_prioridad === 'Crítica').length;
+    document.getElementById("stat-criticas").innerText = solicitudes.filter(s => s.clasificacion_prioridad === 'urgente').length;
 
     const tbody = document.getElementById("tabla-jefe-body");
     if (!solicitudes.length) {
@@ -174,7 +174,7 @@ async function cargarDashboardJefe() {
             <td class="p-3 font-semibold text-slate-900">${s.titulo}</td>
             <td class="p-3 text-slate-600">${s.tipo_arte}</td>
             <td class="p-3 text-slate-600">${s.fecha_evento}</td>
-            <td class="p-3 font-bold ${s.clasificacion_prioridad === 'Crítica' ? 'text-red-600' : 'text-emerald-700'}">${s.clasificacion_prioridad} (${s.puntuacion_total})</td>
+            <td class="p-3 font-bold ${s.clasificacion_prioridad === 'urgente' ? 'text-red-600' : 'text-emerald-700'}">${s.clasificacion_prioridad} (${s.puntuacion_total})</td>
             <td class="p-3 text-slate-600 font-medium">⏱️ ${tiempoTexto}</td>
             <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-semibold ${s.estado === 'pendiente' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${s.estado}</span></td>
         `;
@@ -209,7 +209,7 @@ async function cargarColaDisenador() {
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                        sol.clasificacion_prioridad === 'Crítica' ? 'bg-red-100 text-red-700' :
+                        sol.clasificacion_prioridad === 'urgente' ? 'bg-red-100 text-red-700' :
                         sol.clasificacion_prioridad === 'Alta' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
                     }">${sol.clasificacion_prioridad} (${sol.puntuacion_total})</span>
                     <span class="text-[11px] text-slate-400">Evento: ${sol.fecha_evento}</span>
