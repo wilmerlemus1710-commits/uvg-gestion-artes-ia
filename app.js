@@ -102,7 +102,7 @@ async function registrarSolicitud(e) {
         (adminValor * 0.20)
     ).toFixed(2);
 
-    let clasificacion = puntuacionTotal >= 4.20 ? "Crítica" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
+    let clasificacion = puntuacionTotal >= 4.20 ? "urgente" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
 
     // Mapeo exacto basado en el ENUM de tu base de datos: baja, media, alta, urgente
     let prioridadEnum = puntuacionTotal >= 4.20 ? "urgente" : puntuacionTotal >= 3.50 ? "alta" : puntuacionTotal >= 2.50 ? "media" : "baja";
