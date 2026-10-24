@@ -68,32 +68,32 @@ async function registrarSolicitud(e) {
     const descripcion = document.getElementById("descripcion").value.toLowerCase();
 
     // 2. IMPACTO AUTOMÁTICO (Inferido por tipo de arte o palabras clave)
-    let impactoValor = 3; // Valor por defecto (Medio)
+    let impactoValor = 3; 
     if (titulo.includes("congreso") || titulo.includes("internacional") || titulo.includes("graduación") || tipoArte === "Afiche Digital") {
-        impactoValor = 5; // Estratégico / Alto
+        impactoValor = 5; 
     } else if (titulo.includes("reunión") || titulo.includes("interno")) {
-        impactoValor = 2; // Bajo
+        impactoValor = 2; 
     }
 
-    // 3. ALCANCE AUTOMÁTICO (Inferido según el tipo de requerimiento)
-    let alcanceValor = 3; // Valor por defecto (Varias facultades)
+    // 3. ALCANCE AUTOMÁTICO
+    let alcanceValor = 3; 
     if (tipoArte === "Banner Web" || titulo.includes("campus") || titulo.includes("general")) {
-        alcanceValor = 4; // Campus completo
+        alcanceValor = 4; 
     } else if (titulo.includes("facultad") || titulo.includes("ingeniería") || titulo.includes("departamento")) {
-        alcanceValor = 2; // Una facultad o departamento
+        alcanceValor = 2; 
     }
 
-    // 4. COMPLEJIDAD AUTOMÁTICA (Inferida según el tipo de arte)
-    let complejidadValor = 3; // Estándar por defecto
+    // 4. COMPLEJIDAD AUTOMÁTICA
+    let complejidadValor = 3; 
     if (tipoArte === "Afiche Digital" || titulo.includes("campaña")) {
-        complejidadValor = 5; // Campaña o múltiples piezas complejas
+        complejidadValor = 5; 
     } else if (titulo.includes("cambio") || titulo.includes("actualizar")) {
-        complejidadValor = 1; // Modificación sencilla
+        complejidadValor = 1; 
     }
 
-    const adminValor = 3; // Ponderación administrativa base
+    const adminValor = 3; 
 
-    // CÁLCULO DE LA PUNTUACIÓN TOTAL CON LOS PESOS INSTITUCIONALES
+    // CÁLCULO DE LA PUNTUACIÓN TOTAL
     const puntuacionTotal = (
         (proximidadValor * 0.30) +
         (impactoValor * 0.25) +
@@ -104,7 +104,7 @@ async function registrarSolicitud(e) {
 
     let clasificacion = puntuacionTotal >= 4.20 ? "Crítica" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
 
-    // Objeto listo para insertar de forma transparente en Supabase
+    // Objeto limpio y exacto con las columnas que tu tabla solicitudes sí acepta
     const nuevaSolicitud = {
         solicitante_email: window.usuarioActual ? window.usuarioActual.email : 'desconocido@uvg.edu.gt',
         titulo: document.getElementById("titulo").value,
@@ -117,15 +117,14 @@ async function registrarSolicitud(e) {
         complejidad_valor: complejidadValor,
         admin_valor: adminValor,
         puntuacion_total: parseFloat(puntuacionTotal),
-        clasificacion_prioridad: clasificacion,
-        prioridad: clasificacion.toLowerCase(),
-        estado: "pendiente"
+        clasificacion_prioridad: clasificacion
     };
 
     const { error } = await db.from("solicitudes").insert([nuevaSolicitud]);
 
     if (error) {
         alert("Error al registrar: " + error.message);
+        console.error("Detalle del error:", error);
     } else {
         alert("¡Solicitud enviada con éxito! El motor institucional la ha evaluado y priorizado automáticamente.");
         document.getElementById("form-solicitud").reset();
