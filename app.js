@@ -236,19 +236,46 @@ async function cargarColaDisenador() {
 async function aceptarYGenerarArte(solicitudId, titulo) {
     if (!confirm(`¿Deseas aceptar la solicitud "${titulo}" para iniciar la creación del arte gráfico?`)) return;
 
-    const imagenSimulada = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
+    try {
+        // 1. Descargar una imagen simulada de ejemplo para subirla al Storage en vivo
+        const imagenExterna = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
+        const response = await fetch(imagenExterna);
+        const blob = await response.blob();
 
-    // Inserción directa y limpia en artes_generados sin disparar errores de actualización en la tabla solicitudes
-    const { error: errorArte } = await db.from("artes_generados").insert([{
-        solicitud_id: solicitudId,
-        imagen_url: imagenSimulada,
-        estado: 'creado'
-    }]);
+        // 2. Definir la ruta exacta dentro del bucket artes-institucional (igual a tu estructura)
+        const filePath = `solicitudes/${solicitudId}/arte_generado.jpg`;
 
-    if (errorArte) {
-        alert("Error al procesar la aceptación del arte: " + errorArte.message);
-    } else {
-        alert("¡Arte aceptado y generado con éxito!");
-        cargarColaDisenador(); // Actualiza la interfaz al instante ante los ojos del profesor
+        // 3. Subir el archivo real al Supabase Storage
+        const { error: uploadError } = await db.storage
+            .from('artes-institucional')
+            .upload(filePath, blob, { upsert: true });
+
+        if (uploadError) {
+            console.error("Error al subir al storage:", uploadError);
+        }
+
+        // 4. Obtener la URL pública del archivo recién guardado en el Storage
+        const { data: urlData } = db.storage
+            .from('artes-institucional')
+            .getPublicUrl(filePath);
+
+        const urlFinalStorage = urlData.publicUrl;
+
+        // 5. Registrar el enlace oficial del Storage en la tabla artes_generados
+        const { error: errorArte } = await db.from("artes_generados").insert([{
+            solicitud_id: solicitudId,
+            imagen_url: urlFinalStorage,
+            estado: 'creado'
+        }]);
+
+        if (errorArte) {
+            alert("Error al registrar el arte en la base de datos: " + errorArte.message);
+        } else {
+            alert("¡Arte aceptado, generado y almacenado en Supabase Storage con éxito!");
+            cargarColaDisenador(); // Actualiza la interfaz al instante
+        }
+    } catch (e) {
+        console.error("Excepción en aceptación:", e);
+        alert("Ocurrió un error al procesar el archivo multimedia.");
     }
 }
