@@ -1,19 +1,15 @@
 import os
 from io import BytesIO
-import openai
+import requests
 from dotenv import load_dotenv
 from supabase import create_client
-import requests
 
 # Cargar variables de entorno
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Inicializar clientes
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 
 def generar_y_guardar_arte_institucional(solicitud_id: str):
@@ -41,39 +37,28 @@ def generar_y_guardar_arte_institucional(solicitud_id: str):
   print(f"Título obtenido: {titulo}")
   print(f"Tipo de arte: {tipo_arte}")
 
-  # 2. Prompt enfocado en AFICHE / FLYER FORMAL (Estructura corporativa y limpia)
+  # 2. Prompt enfocado en un fondo institucional limpio y profesional, sin texto falso
   prompt_afiche = (
-      f"A professional formal event poster and promotional flyer background for a university event "
-      f"titled '{titulo}'. Context: {descripcion}. "
-      f"Design style: Clean corporate graphic design, elegant layout framing with professional empty spaces for text, "
-      f"modern academic branding, sophisticated color palette featuring official university green and neutral tones, "
-      f"high-end marketing banner aesthetic, crisp vector lines, highly polished visual composition."
+      "Professional minimalist corporate graphic background for a university"
+      " event banner. Clean geometric composition, elegant modern academic"
+      " aesthetic, sophisticated color palette featuring official university"
+      " green tones and clean neutral white/gray spaces. CRITICAL: ABSOLUTELY"
+      " NO TEXT, NO LETTERS, NO TYPOGRAPHY, NO WORDS, NO SYMBOLS, NO FAKE"
+      " WRITING."
   )
 
-  print("Generando afiche formal con DALL-E 2...")
+  # Codificar el prompt para la URL de Pollinations especificando un estilo de alta calidad
+  prompt_encoded = requests.utils.quote(prompt_afiche)
+  url_ia = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true&model=flux"
 
-  try:
-    # Llamada a DALL-E 2 para afiches y banners formales
-    ai_response = client.images.generate(
-        model="dall-e-2",
-        prompt=prompt_afiche,
-        size="1024x1024",  # DALL-E 2 soporta 1024x1024 de manera estándar
-        n=1,
-    )
+  print("Generando afiche formal y limpio...")
+  img_response = requests.get(url_ia)
 
-    image_url = ai_response.data[0].url
-
-    # Descargar los bytes de la imagen generada
-    img_response = requests.get(image_url)
-    if img_response.status_code != 200:
-      print("Error al descargar la imagen generada por OpenAI.")
-      return
-
-    image_bytes = BytesIO(img_response.content).getvalue()
-
-  except Exception as e:
-    print(f"Ocurrió un error al conectar con la API de OpenAI: {e}")
+  if img_response.status_code != 200:
+    print(f"Error al generar la imagen: {img_response.status_code}")
     return
+
+  image_bytes = BytesIO(img_response.content).getvalue()
 
   # 3. Subir el archivo resultante al Storage de Supabase
   file_path = f"solicitudes/{solicitud_id}/arte_generado.png"
