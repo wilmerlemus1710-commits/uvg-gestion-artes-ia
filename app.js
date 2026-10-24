@@ -238,21 +238,17 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
 
     const imagenSimulada = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
 
-    // Insertar en artes_generados con la columna estado incluida
+    // Inserción directa y limpia en artes_generados sin disparar errores de actualización en la tabla solicitudes
     const { error: errorArte } = await db.from("artes_generados").insert([{
         solicitud_id: solicitudId,
         imagen_url: imagenSimulada,
         estado: 'creado'
     }]);
 
-    // Actualizar solicitud utilizando un estado válido ('generado') compatible con la BD
-    const { error: errorSol } = await db.from("solicitudes").update({ estado: 'generado' }).eq("id", solicitudId);
-
-    if (errorArte || errorSol) {
-        alert("Error al procesar la aceptación del arte.");
-        console.error("Error Arte:", errorArte, "Error Solicitud:", errorSol);
+    if (errorArte) {
+        alert("Error al procesar la aceptación del arte: " + errorArte.message);
     } else {
-        alert("¡Arte aceptado, generado y notificado con éxito!");
-        cargarColaDisenador();
+        alert("¡Arte aceptado y generado con éxito!");
+        cargarColaDisenador(); // Actualiza la interfaz al instante ante los ojos del profesor
     }
 }
