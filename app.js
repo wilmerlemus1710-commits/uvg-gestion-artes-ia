@@ -234,34 +234,58 @@ async function cargarColaDisenador() {
 }
 
 async function aceptarYGenerarArte(solicitudId, titulo) {
-    if (!confirm(`¿Deseas aceptar la solicitud "${titulo}" para iniciar la creación del arte gráfico?`)) return;
+    if (!confirm(`¿Deseas aceptar la solicitud "${titulo}" para iniciar la creación y almacenamiento dinámico del arte gráfico?`)) return;
 
     try {
-        // 1. Descargar una imagen simulada de ejemplo para subirla al Storage en vivo
-        const imagenExterna = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
-        const response = await fetch(imagenExterna);
-        const blob = await response.blob();
+        // 1. Crear un canvas dinámico localmente (evita bloqueos de CORS y genera un archivo real por solicitud)
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 500;
+        const ctx = canvas.getContext('2d');
+        
+        // Fondo institucional elegante
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Texto dinámico con el título de la solicitud del usuario
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText("UVG Campus Sur - Arte Institucional", 50, 80);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px sans-serif';
+        // Ajustar texto largo si es necesario
+        ctx.fillText(titulo.length > 35 ? titulo.substring(0, 32) + "..." : titulo, 50, 160);
+        
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '20px sans-serif';
+        ctx.fillText("Estado: Generado y Aprobado en tiempo real", 50, 240);
 
-        // 2. Definir la ruta exacta dentro del bucket artes-institucional (igual a tu estructura)
+        // Convertir el canvas a un Blob (archivo de imagen binario)
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+
+        // 2. Definir la ruta dinámica única en tu Supabase Storage basada en el ID de la solicitud
         const filePath = `solicitudes/${solicitudId}/arte_generado.jpg`;
 
-        // 3. Subir el archivo real al Supabase Storage
+        // 3. Subir el archivo real al bucket 'artes-institucional' de Supabase Storage
         const { error: uploadError } = await db.storage
             .from('artes-institucional')
             .upload(filePath, blob, { upsert: true });
 
         if (uploadError) {
             console.error("Error al subir al storage:", uploadError);
+            alert("Error al subir al storage: " + uploadError.message);
+            return;
         }
 
-        // 4. Obtener la URL pública del archivo recién guardado en el Storage
+        // 4. Obtener la URL pública oficial generada por el Storage para esta solicitud
         const { data: urlData } = db.storage
             .from('artes-institucional')
             .getPublicUrl(filePath);
 
         const urlFinalStorage = urlData.publicUrl;
 
-        // 5. Registrar el enlace oficial del Storage en la tabla artes_generados
+        // 5. Guardar el registro en la tabla artes_generados con la URL dinámica del Storage
         const { error: errorArte } = await db.from("artes_generados").insert([{
             solicitud_id: solicitudId,
             imagen_url: urlFinalStorage,
@@ -269,13 +293,13 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
         }]);
 
         if (errorArte) {
-            alert("Error al registrar el arte en la base de datos: " + errorArte.message);
+            alert("Error al registrar en la base de datos: " + errorArte.message);
         } else {
-            alert("¡Arte aceptado, generado y almacenado en Supabase Storage con éxito!");
-            cargarColaDisenador(); // Actualiza la interfaz al instante
+            alert("¡Arte generado, almacenado en el Storage y vinculado con éxito!");
+            cargarColaDisenador(); // Refresca la interfaz al instante mostrando la nueva imagen
         }
     } catch (e) {
-        console.error("Excepción en aceptación:", e);
+        console.error("Excepción:", e);
         alert("Ocurrió un error al procesar el archivo multimedia.");
     }
 }
