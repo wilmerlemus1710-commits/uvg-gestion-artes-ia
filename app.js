@@ -104,8 +104,8 @@ async function registrarSolicitud(e) {
 
     let clasificacion = puntuacionTotal >= 4.20 ? "Crítica" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
 
-    // Mapeo limpio en minúsculas y sin tildes para cumplir con el enum 'nivel_prioridad' de Supabase
-    let prioridadEnum = puntuacionTotal >= 4.20 ? "critica" : puntuacionTotal >= 3.50 ? "alta" : puntuacionTotal >= 2.50 ? "media" : "baja";
+    // Mapeo exacto basado en el ENUM de tu base de datos: baja, media, alta, urgente
+    let prioridadEnum = puntuacionTotal >= 4.20 ? "urgente" : puntuacionTotal >= 3.50 ? "alta" : puntuacionTotal >= 2.50 ? "media" : "baja";
 
     const nuevaSolicitud = {
         solicitante_email: window.usuarioActual ? window.usuarioActual.email : 'desconocido@uvg.edu.gt',
