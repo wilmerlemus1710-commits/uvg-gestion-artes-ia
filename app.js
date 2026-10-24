@@ -193,7 +193,6 @@ async function cargarColaDisenador() {
         return;
     }
 
-    // Verificar si el usuario actual es jefe o admin para otorgar permisos de aprobación
     const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual") || "{}");
     const esAdminOJefe = usuarioActual.rol === 'jefe' || usuarioActual.rol === 'admin' || usuarioActual.rol === 'disenador';
 
@@ -239,16 +238,19 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
 
     const imagenSimulada = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
 
+    // Insertar en artes_generados con la columna estado incluida
     const { error: errorArte } = await db.from("artes_generados").insert([{
         solicitud_id: solicitudId,
         imagen_url: imagenSimulada,
         estado: 'creado'
     }]);
 
-    const { error: errorSol } = await db.from("solicitudes").update({ estado: 'en_revision' }).eq("id", solicitudId);
+    // Actualizar solicitud utilizando un estado válido ('generado') compatible con la BD
+    const { error: errorSol } = await db.from("solicitudes").update({ estado: 'generado' }).eq("id", solicitudId);
 
     if (errorArte || errorSol) {
         alert("Error al procesar la aceptación del arte.");
+        console.error("Error Arte:", errorArte, "Error Solicitud:", errorSol);
     } else {
         alert("¡Arte aceptado, generado y notificado con éxito!");
         cargarColaDisenador();
