@@ -58,7 +58,7 @@ async function registrarSolicitud(e) {
     const fechaEvento = new Date(fechaEventoStr);
     const hoy = new Date();
     
-    // 1. PROXIMIDAD AUTOMÁTICA (Basada en días restantes)
+    // 1. PROXIMIDAD AUTOMÁTICA
     const diferenciaDias = Math.ceil((fechaEvento - hoy) / (1000 * 60 * 60 * 24));
     let proximidadValor = diferenciaDias <= 2 ? 5 : diferenciaDias <= 4 ? 4 : diferenciaDias <= 7 ? 3 : diferenciaDias <= 14 ? 2 : 1;
 
@@ -67,7 +67,7 @@ async function registrarSolicitud(e) {
     const titulo = document.getElementById("titulo").value.toLowerCase();
     const descripcion = document.getElementById("descripcion").value.toLowerCase();
 
-    // 2. IMPACTO AUTOMÁTICO (Inferido por tipo de arte o palabras clave)
+    // 2. IMPACTO AUTOMÁTICO
     let impactoValor = 3; 
     if (titulo.includes("congreso") || titulo.includes("internacional") || titulo.includes("graduación") || tipoArte === "Afiche Digital") {
         impactoValor = 5; 
@@ -104,7 +104,9 @@ async function registrarSolicitud(e) {
 
     let clasificacion = puntuacionTotal >= 4.20 ? "Crítica" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
 
-    // Objeto limpio y exacto con las columnas que tu tabla solicitudes sí acepta
+    // Mapeo limpio en minúsculas y sin tildes para cumplir con el enum 'nivel_prioridad' de Supabase
+    let prioridadEnum = puntuacionTotal >= 4.20 ? "critica" : puntuacionTotal >= 3.50 ? "alta" : puntuacionTotal >= 2.50 ? "media" : "baja";
+
     const nuevaSolicitud = {
         solicitante_email: window.usuarioActual ? window.usuarioActual.email : 'desconocido@uvg.edu.gt',
         titulo: document.getElementById("titulo").value,
@@ -117,7 +119,9 @@ async function registrarSolicitud(e) {
         complejidad_valor: complejidadValor,
         admin_valor: adminValor,
         puntuacion_total: parseFloat(puntuacionTotal),
-        clasificacion_prioridad: clasificacion
+        clasificacion_prioridad: clasificacion,
+        prioridad: prioridadEnum,
+        estado: "pendiente"
     };
 
     const { error } = await db.from("solicitudes").insert([nuevaSolicitud]);
