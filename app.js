@@ -58,7 +58,7 @@ async function registrarSolicitud(e) {
     const fechaEvento = new Date(fechaEventoStr);
     const hoy = new Date();
     
-    // 1. PROXIMIDAD AUTOMÁTICA
+    // 1. PROXIMIDAD AUTOMÁTICA (Basada en días restantes)
     const diferenciaDias = Math.ceil((fechaEvento - hoy) / (1000 * 60 * 60 * 24));
     let proximidadValor = diferenciaDias <= 2 ? 5 : diferenciaDias <= 4 ? 4 : diferenciaDias <= 7 ? 3 : diferenciaDias <= 14 ? 2 : 1;
 
@@ -67,7 +67,7 @@ async function registrarSolicitud(e) {
     const titulo = document.getElementById("titulo").value.toLowerCase();
     const descripcion = document.getElementById("descripcion").value.toLowerCase();
 
-    // 2. IMPACTO AUTOMÁTICO
+    // 2. IMPACTO AUTOMÁTICO (Inferido por tipo de arte o palabras clave)
     let impactoValor = 3; 
     if (titulo.includes("congreso") || titulo.includes("internacional") || titulo.includes("graduación") || tipoArte === "Afiche Digital") {
         impactoValor = 5; 
@@ -75,7 +75,7 @@ async function registrarSolicitud(e) {
         impactoValor = 2; 
     }
 
-    // 3. ALCANCE AUTOMÁTICO
+    // 3. ALCANCE AUTOMÁTICO (Inferido según el tipo de requerimiento)
     let alcanceValor = 3; 
     if (tipoArte === "Banner Web" || titulo.includes("campus") || titulo.includes("general")) {
         alcanceValor = 4; 
@@ -83,7 +83,7 @@ async function registrarSolicitud(e) {
         alcanceValor = 2; 
     }
 
-    // 4. COMPLEJIDAD AUTOMÁTICA
+    // 4. COMPLEJIDAD AUTOMÁTICA (Inferida según el tipo de arte)
     let complejidadValor = 3; 
     if (tipoArte === "Afiche Digital" || titulo.includes("campaña")) {
         complejidadValor = 5; 
@@ -91,9 +91,9 @@ async function registrarSolicitud(e) {
         complejidadValor = 1; 
     }
 
-    const adminValor = 3; 
+    const adminValor = 3; // Ponderación administrativa base
 
-    // CÁLCULO DE LA PUNTUACIÓN TOTAL
+    // CÁLCULO DE LA PUNTUACIÓN TOTAL CON LOS PESOS INSTITUCIONALES
     const puntuacionTotal = (
         (proximidadValor * 0.30) +
         (impactoValor * 0.25) +
@@ -102,11 +102,12 @@ async function registrarSolicitud(e) {
         (adminValor * 0.20)
     ).toFixed(2);
 
-    let clasificacion = puntuacionTotal >= 4.20 ? "urgente" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
-
-    // Mapeo exacto basado en el ENUM de tu base de datos: baja, media, alta, urgente
+    let clasificacion = puntuacionTotal >= 4.20 ? "Crítica" : puntuacionTotal >= 3.50 ? "Alta" : puntuacionTotal >= 2.50 ? "Media" : "Baja";
+    
+    // Mapeo exacto basado en el ENUM 'nivel_prioridad' de la base de datos: urgente, alta, media, baja
     let prioridadEnum = puntuacionTotal >= 4.20 ? "urgente" : puntuacionTotal >= 3.50 ? "alta" : puntuacionTotal >= 2.50 ? "media" : "baja";
 
+    // Objeto listo para insertar en Supabase
     const nuevaSolicitud = {
         solicitante_email: window.usuarioActual ? window.usuarioActual.email : 'desconocido@uvg.edu.gt',
         titulo: document.getElementById("titulo").value,
@@ -128,7 +129,6 @@ async function registrarSolicitud(e) {
 
     if (error) {
         alert("Error al registrar: " + error.message);
-        console.error("Detalle del error:", error);
     } else {
         alert("¡Solicitud enviada con éxito! El motor institucional la ha evaluado y priorizado automáticamente.");
         document.getElementById("form-solicitud").reset();
@@ -152,7 +152,7 @@ async function cargarDashboardJefe() {
     document.getElementById("stat-total").innerText = solicitudes.length;
     document.getElementById("stat-pendientes").innerText = solicitudes.filter(s => s.estado === 'pendiente').length;
     document.getElementById("stat-generados").innerText = solicitudes.filter(s => s.estado === 'en_revision' || s.estado === 'generado').length;
-    document.getElementById("stat-criticas").innerText = solicitudes.filter(s => s.clasificacion_prioridad === 'urgente').length;
+    document.getElementById("stat-criticas").innerText = solicitudes.filter(s => s.clasificacion_prioridad === 'Crítica').length;
 
     const tbody = document.getElementById("tabla-jefe-body");
     if (!solicitudes.length) {
@@ -174,7 +174,7 @@ async function cargarDashboardJefe() {
             <td class="p-3 font-semibold text-slate-900">${s.titulo}</td>
             <td class="p-3 text-slate-600">${s.tipo_arte}</td>
             <td class="p-3 text-slate-600">${s.fecha_evento}</td>
-            <td class="p-3 font-bold ${s.clasificacion_prioridad === 'urgente' ? 'text-red-600' : 'text-emerald-700'}">${s.clasificacion_prioridad} (${s.puntuacion_total})</td>
+            <td class="p-3 font-bold ${s.clasificacion_prioridad === 'Crítica' ? 'text-red-600' : 'text-emerald-700'}">${s.clasificacion_prioridad} (${s.puntuacion_total})</td>
             <td class="p-3 text-slate-600 font-medium">⏱️ ${tiempoTexto}</td>
             <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-semibold ${s.estado === 'pendiente' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${s.estado}</span></td>
         `;
@@ -209,7 +209,7 @@ async function cargarColaDisenador() {
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                        sol.clasificacion_prioridad === 'urgente' ? 'bg-red-100 text-red-700' :
+                        sol.clasificacion_prioridad === 'Crítica' ? 'bg-red-100 text-red-700' :
                         sol.clasificacion_prioridad === 'Alta' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
                     }">${sol.clasificacion_prioridad} (${sol.puntuacion_total})</span>
                     <span class="text-[11px] text-slate-400">Evento: ${sol.fecha_evento}</span>
@@ -222,7 +222,12 @@ async function cargarColaDisenador() {
             <div>
                 ${arte ? `
                     <img src="${arte.imagen_url}" alt="Arte" class="w-full h-32 object-cover rounded-lg mb-2 border">
-                    <span class="block text-center bg-emerald-100 text-emerald-800 text-xs font-semibold py-1.5 rounded-lg">✔ Arte Creado y Aprobado</span>
+                    <div class="flex flex-col gap-2">
+                        <span class="block text-center bg-emerald-100 text-emerald-800 text-xs font-semibold py-1.5 rounded-lg">✔ Arte Creado y Aprobado</span>
+                        <button onclick="descargarArte('${arte.imagen_url}')" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer shadow flex items-center justify-center gap-1">
+                            📥 Descargar Imagen
+                        </button>
+                    </div>
                 ` : esAdminOJefe ? `
                     <button onclick="aceptarYGenerarArte('${sol.id}', '${sol.titulo}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer shadow">
                         Aceptar y Generar Arte 🎨
@@ -266,7 +271,7 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
         // 2. Ruta dinámica única en el Storage
         const filePath = `solicitudes/${solicitudId}/arte_generado.jpg`;
 
-        // 3. Subir al bucket CORREGIDO ('artes-institucionales')
+        // 3. Subir al bucket 'artes-institucionales'
         const { error: uploadError } = await db.storage
             .from('artes-institucionales')
             .upload(filePath, blob, { upsert: true });
@@ -302,49 +307,22 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
         alert("Ocurrió un error al procesar el archivo multimedia.");
     }
 }
-async function descargarInforme() {
+
+async function descargarArte(imageUrl) {
     try {
-        // Consultar todas las solicitudes con sus datos actualizados desde Supabase
-        const { data: solicitudes, error } = await db
-            .from("solicitudes")
-            .select(`*, artes_generados (*)`)
-            .order("puntuacion_total", { ascending: false });
-
-        if (error || !solicitudes || solicitudes.length === 0) {
-            alert("No hay datos disponibles para generar el informe.");
-            return;
-        }
-
-        // Encabezados del archivo CSV (con soporte para caracteres latinos \uFEFF)
-        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-        csvContent += "Solicitante,Titulo,Tipo de Arte,Fecha del Evento,Prioridad,Puntuacion,Estado\n";
-
-        // Rellenar las filas con los datos de las solicitudes
-        solicitudes.forEach(s => {
-            const row = [
-                `"${s.solicitante_email || 'N/D'}"`,
-                `"${(s.titulo || '').replace(/"/g, '""')}"`,
-                `"${s.tipo_arte || ''}"`,
-                `"${s.fecha_evento || ''}"`,
-                `"${s.clasificacion_prioridad || ''}"`,
-                s.puntuacion_total || 0,
-                `"${s.estado || ''}"`
-            ].join(",");
-            csvContent += row + "\n";
-        });
-
-        // Crear enlace temporal de descarga automática
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "informe_solicitudes_uvg.csv");
-        document.body.appendChild(link);
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
         
-        link.click(); // Dispara la descarga al instante
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = 'arte_institucional_uvg.jpg';
+        document.body.appendChild(link);
+        link.click();
+        
         document.body.removeChild(link);
-
+        window.URL.revokeObjectURL(blobUrl);
     } catch (e) {
-        console.error("Error al descargar el informe:", e);
-        alert("Ocurrió un error al generar el reporte.");
+        window.open(imageUrl, '_blank');
     }
 }
