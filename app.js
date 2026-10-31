@@ -302,3 +302,49 @@ async function aceptarYGenerarArte(solicitudId, titulo) {
         alert("Ocurrió un error al procesar el archivo multimedia.");
     }
 }
+async function descargarInforme() {
+    try {
+        // Consultar todas las solicitudes con sus datos actualizados desde Supabase
+        const { data: solicitudes, error } = await db
+            .from("solicitudes")
+            .select(`*, artes_generados (*)`)
+            .order("puntuacion_total", { ascending: false });
+
+        if (error || !solicitudes || solicitudes.length === 0) {
+            alert("No hay datos disponibles para generar el informe.");
+            return;
+        }
+
+        // Encabezados del archivo CSV (con soporte para caracteres latinos \uFEFF)
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        csvContent += "Solicitante,Titulo,Tipo de Arte,Fecha del Evento,Prioridad,Puntuacion,Estado\n";
+
+        // Rellenar las filas con los datos de las solicitudes
+        solicitudes.forEach(s => {
+            const row = [
+                `"${s.solicitante_email || 'N/D'}"`,
+                `"${(s.titulo || '').replace(/"/g, '""')}"`,
+                `"${s.tipo_arte || ''}"`,
+                `"${s.fecha_evento || ''}"`,
+                `"${s.clasificacion_prioridad || ''}"`,
+                s.puntuacion_total || 0,
+                `"${s.estado || ''}"`
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        // Crear enlace temporal de descarga automática
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "informe_solicitudes_uvg.csv");
+        document.body.appendChild(link);
+        
+        link.click(); // Dispara la descarga al instante
+        document.body.removeChild(link);
+
+    } catch (e) {
+        console.error("Error al descargar el informe:", e);
+        alert("Ocurrió un error al generar el reporte.");
+    }
+}
